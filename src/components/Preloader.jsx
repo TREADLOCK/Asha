@@ -136,6 +136,19 @@ export default function Preloader({ isReady, onEnter }) {
                   <span className="text-white/60 ml-2">{percent}%</span>
                 </motion.p>
               </AnimatePresence>
+              
+              <AnimatePresence>
+                {percent >= 70 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-white/20 text-[8px] tracking-[0.4em] uppercase font-light text-center mt-2"
+                  >
+                    ( Tap anywhere for sound )
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </motion.div>

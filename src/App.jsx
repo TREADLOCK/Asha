@@ -69,22 +69,53 @@ function App() {
     };
   }, []);
 
+  // Audio Autoplay Recovery: Listen for first interaction to resume if blocked
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const resumeAudio = () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play()
+          .then(() => {
+            setIsPlaying(true);
+            window.removeEventListener('click', resumeAudio);
+            window.removeEventListener('touchstart', resumeAudio);
+          })
+          .catch(e => console.log("Still blocked", e));
+      }
+    };
+
+    window.addEventListener('click', resumeAudio);
+    window.addEventListener('touchstart', resumeAudio);
+
+    return () => {
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('touchstart', resumeAudio);
+    };
+  }, [isLoaded, isPlaying]);
+
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        setIsPlaying(false);
       } else {
-        audioRef.current.play().catch(e => console.log("Audio play blocked", e));
+        audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.log("Audio play blocked", e));
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
   const handleEnter = () => {
     setIsLoaded(true);
     if (audioRef.current) {
-      audioRef.current.play().catch(e => console.log("Audio play blocked", e));
-      setIsPlaying(true);
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => {
+          console.log("Autoplay blocked, waiting for gesture", e);
+          setIsPlaying(false);
+        });
     }
   };
 
@@ -111,7 +142,7 @@ function App() {
         {isPlaying ? (
           <Volume2 className="w-6 h-6 text-brand-white group-hover:scale-110 transition-transform" />
         ) : (
-          <VolumeX className="w-6 h-6 text-brand-white group-hover:scale-110 transition-transform" />
+          <VolumeX className="w-6 h-6 text-brand-white group-hover:scale-110 transition-transform animate-pulse" />
         )}
       </button>
 
