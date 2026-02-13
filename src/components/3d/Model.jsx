@@ -211,9 +211,11 @@ export default function Model({ isEntering, onLoaded }) {
   // Increased particle count for higher density rose
   const count = 25000;
 
-  // Calculate responsive scale (0.5 on narrow mobile, 1.0 on desktop)
+  // Calculate responsive scale (1.0 on desktop, 0.6-0.8 on mobile)
   const responsiveScale = useMemo(() => {
-    return Math.min(1, Math.max(0.6, viewport.width / 4.5)); // Slightly more generous on mobile
+    // If viewport width is large (desktop), don't scale down
+    if (viewport.width > 6) return 1.0;
+    return Math.min(1, Math.max(0.7, viewport.width / 5)); 
   }, [viewport.width]);
 
   const { progress } = useProgress();
@@ -269,13 +271,14 @@ export default function Model({ isEntering, onLoaded }) {
         mesh.current.rotation.z = (dProg * 0.05) * freedom;
 
         // Absolute Lock
-        if (dProg > 0.95) {
+        if (dProg > 0.97) {
             mesh.current.rotation.x = THREE.MathUtils.lerp(mesh.current.rotation.x, 0, 0.1);
             mesh.current.rotation.z = THREE.MathUtils.lerp(mesh.current.rotation.z, 0, 0.1);
         }
 
         // --- 3. CAMERA CINEMATIC ZOOM (Synced) ---
-        const zoomPhase = THREE.MathUtils.smoothstep(dProg, 0.9, 1.0);
+        // DELAYED ZOOM: Start at 0.95 instead of 0.9
+        const zoomPhase = THREE.MathUtils.smoothstep(dProg, 0.95, 1.0);
         // Adjusted target positions to account for scaling
         const targetZ = THREE.MathUtils.lerp(5, -2.5 * responsiveScale, zoomPhase);
         const targetY = THREE.MathUtils.lerp(0, 0.8 * responsiveScale, zoomPhase);
