@@ -29,7 +29,7 @@ export default function Climax() {
     if (!isInView) {
       if (sequenceStarted.current) {
         sequenceStarted.current = false;
-        setStage(STAGES.VALENTINE);
+        setTimeout(() => setStage(STAGES.VALENTINE), 0);
         window.dispatchEvent(new CustomEvent('unlock-scroll'));
       }
       return;
@@ -81,7 +81,7 @@ export default function Climax() {
         className="absolute w-[80vw] h-[80vw] bg-red-600 rounded-full blur-[150px] -z-10"
       />
 
-      <div className="text-center px-4 w-full max-w-4xl relative min-h-[400px] flex items-center justify-center">
+      <div className="text-center px-4 w-full max-w-5xl relative min-h-[500px] flex items-center justify-center">
         <AnimatePresence mode="wait">
           {stage === STAGES.VALENTINE && (
             <motion.div
@@ -90,13 +90,13 @@ export default function Climax() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4 } }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="absolute inset-0 flex flex-col items-center justify-center"
+              className="absolute inset-0 flex flex-col items-center justify-center p-4"
             >
-              <h1 className="text-5xl md:text-8xl font-serif text-brand-white drop-shadow-2xl brightness-125 mb-6">
+              <h1 className="text-[clamp(2.5rem,10vw,6rem)] font-serif text-brand-white drop-shadow-2xl brightness-125 mb-4 md:mb-6 leading-tight">
                 Happy Valentine's Day
               </h1>
-              <div className="h-px w-32 bg-white/30 mx-auto mb-8 origin-center" />
-              <p className="text-xl md:text-3xl font-light text-brand-white/40 tracking-[0.3em] uppercase italic">
+              <div className="h-px w-24 md:w-32 bg-white/30 mx-auto mb-6 md:mb-8 origin-center" />
+              <p className="text-[clamp(1rem,4vw,2rem)] font-light text-brand-white/40 tracking-[0.2em] md:tracking-[0.3em] uppercase italic">
                 ...from your friend
               </p>
             </motion.div>
@@ -109,9 +109,9 @@ export default function Climax() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4 } }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 flex flex-col items-center justify-center"
+              className="absolute inset-0 flex flex-col items-center justify-center p-4"
             >
-              <h2 className="text-7xl md:text-9xl font-serif text-brand-white/80 tracking-tighter uppercase drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
+              <h2 className="text-[clamp(3.5rem,15vw,9rem)] font-serif text-brand-white/80 tracking-tighter uppercase drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] leading-none">
                 TREADLOCK
               </h2>
             </motion.div>
@@ -124,9 +124,9 @@ export default function Climax() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.8 } }}
               transition={{ duration: 0.6 }}
-              className="absolute inset-0 flex flex-col items-center justify-center"
+              className="absolute inset-0 flex flex-col items-center justify-center p-4"
             >
-              <p className="text-2xl md:text-5xl font-light text-brand-white text-center leading-tight">
+              <p className="text-[clamp(1.2rem,5vw,3rem)] font-light text-brand-white text-center leading-snug">
                 "Who says Devs can't be <br/> <span className="text-red-500 font-serif italic font-bold">romantic😎?</span>"
               </p>
             </motion.div>
