@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { shaderMaterial, useProgress } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
@@ -12,18 +12,20 @@ const ParticleMorphMaterial = shaderMaterial(
     uProgress: 0,
     uEntrance: 0,
     uTime: 0,
-    uColor: new THREE.Color('#ff2d55'),   // Red (Heart)
-    uColor2: new THREE.Color('#2962ff'),  // Blue (Rose) - Royal Blue like reference
-    uColor3: new THREE.Color('#e0e0e0'),  // Silver/White (Final Symbol)
+    uScale: 1.0, 
+    uColor: new THREE.Color('#ff2d55'),
+    uColor2: new THREE.Color('#2962ff'),
+    uColor3: new THREE.Color('#e0e0e0'),
   },
   // Vertex Shader
   `
     uniform float uProgress;
     uniform float uEntrance;
     uniform float uTime;
+    uniform float uScale;
     
     attribute vec3 aPositionTarget; 
-    attribute vec3 aPositionTargetSymbol; // Second target
+    attribute vec3 aPositionTargetSymbol;
     attribute float aRandom;
     
     varying float vAlpha;
@@ -32,23 +34,20 @@ const ParticleMorphMaterial = shaderMaterial(
     
     void main() {
       vRandom = aRandom;
-      // 1. PARTICLE COALESCENCE (Entrance: 0.0 -> 1.0)
       vec3 chaos = vec3(
         (fract(aRandom * 123.4) - 0.5) * 20.0,
         (fract(aRandom * 567.8) - 0.5) * 20.0,
         (fract(aRandom * 910.1) - 0.5) * 20.0
       );
       
-      // MULTI-STAGE MIX
       float p1 = smoothstep(0.0, 0.2, uProgress);
       float p2 = smoothstep(0.6, 0.75, uProgress); 
-      float p3 = smoothstep(0.95, 1.0, uProgress); // Loop back to start
+      float p3 = smoothstep(0.95, 1.0, uProgress); 
       
       vec3 dnaPos = mix(position, aPositionTarget, p1);
       vec3 targetPos = mix(dnaPos, aPositionTargetSymbol, p2);
-      vec3 finalPos = mix(targetPos, position, p3); // Back to Heart
+      vec3 finalPos = mix(targetPos, position, p3);
       
-      // Initial Emergence Mix
       vec3 pos = mix(chaos, finalPos, smoothstep(0.0, 0.8, uEntrance));
       
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -58,7 +57,7 @@ const ParticleMorphMaterial = shaderMaterial(
       
       float fuse = smoothstep(0.9, 1.0, uProgress);
       float sparkleSize = smoothstep(0.5, 1.0, aRandom) * exposure * 30.0;
-      float baseSize = 12.0 + fuse * 12.0 + sparkleSize; 
+      float baseSize = (12.0 + fuse * 12.0 + sparkleSize) * uScale; 
       
       gl_PointSize = baseSize * (1.0 / -mvPosition.z); 
       gl_Position = projectionMatrix * mvPosition;
@@ -67,12 +66,12 @@ const ParticleMorphMaterial = shaderMaterial(
       vEntrance = uEntrance;
     }
   `,
-  // Fragment Shader
+  // (Fragment shader remains same)
   `
     uniform float uProgress;
-    uniform vec3 uColor;  // Red
-    uniform vec3 uColor2; // Blue
-    uniform vec3 uColor3; // White
+    uniform vec3 uColor;
+    uniform vec3 uColor2;
+    uniform vec3 uColor3;
     
     varying float vEntrance;
     varying float vRandom;
@@ -85,7 +84,7 @@ const ParticleMorphMaterial = shaderMaterial(
       
       float mixBlue = smoothstep(0.2, 0.35, uProgress);
       float mixWhite = smoothstep(0.85, 0.95, uProgress);
-      float mixHeartBack = smoothstep(0.98, 1.0, uProgress); // Loop back to Red
+      float mixHeartBack = smoothstep(0.98, 1.0, uProgress);
       
       vec3 activeColor = mix(uColor, uColor2, mixBlue);
       activeColor = mix(activeColor, uColor3, mixWhite);
@@ -104,6 +103,8 @@ const ParticleMorphMaterial = shaderMaterial(
 );
 
 extend({ ParticleMorphMaterial });
+
+// ... (getTextPoints and generateParticleData stay same)
 
 // Helper to sample points from text using a canvas
 const getTextPoints = (text, count) => {
@@ -204,10 +205,16 @@ const generateParticleData = (count, roseMesh) => {
 };
 
 export default function Model({ isEntering, onLoaded }) {
+  const { viewport } = useThree();
   const material = useRef();
   const mesh = useRef();
   // Increased particle count for higher density rose
   const count = 25000;
+
+  // Calculate responsive scale (0.5 on narrow mobile, 1.0 on desktop)
+  const responsiveScale = useMemo(() => {
+    return Math.min(1, Math.max(0.6, viewport.width / 4.5)); // Slightly more generous on mobile
+  }, [viewport.width]);
 
   const { progress } = useProgress();
 
@@ -230,7 +237,10 @@ export default function Model({ isEntering, onLoaded }) {
   }, [count, roseObj]);
 
   useFrame((state, delta) => {
-     if (material.current && mesh.current) {
+     if (material.current && mesh.current && mesh.current.scale) {
+        // Apply responsive scale to the entire points group
+        mesh.current.scale.setScalar(responsiveScale);
+
         const scrollY = window.scrollY;
         // Map progress across the entire scrollable range (1075vh total approx)
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -266,8 +276,9 @@ export default function Model({ isEntering, onLoaded }) {
 
         // --- 3. CAMERA CINEMATIC ZOOM (Synced) ---
         const zoomPhase = THREE.MathUtils.smoothstep(dProg, 0.9, 1.0);
-        const targetZ = THREE.MathUtils.lerp(5, -2.5, zoomPhase);
-        const targetY = THREE.MathUtils.lerp(0, 0.8, zoomPhase);
+        // Adjusted target positions to account for scaling
+        const targetZ = THREE.MathUtils.lerp(5, -2.5 * responsiveScale, zoomPhase);
+        const targetY = THREE.MathUtils.lerp(0, 0.8 * responsiveScale, zoomPhase);
         
         state.camera.position.z = targetZ;
         state.camera.position.y = targetY;
@@ -313,6 +324,7 @@ export default function Model({ isEntering, onLoaded }) {
             transparent 
             depthWrite={false} 
             blending={THREE.AdditiveBlending}
+            uScale={responsiveScale} 
         />
     </points>
   );
