@@ -9,9 +9,10 @@ import { AnimatePresence } from 'framer-motion';
 
 function App() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false); // Controls Preloader exit
+  const [isLoaded, setIsLoaded] = useState(false); 
   const [audioLoaded, setAudioLoaded] = useState(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false); // New state to track if recovery is needed
   const audioRef = useRef(null);
   const lenisRef = useRef(null);
 
@@ -69,17 +70,16 @@ function App() {
     };
   }, []);
 
-  // Audio Autoplay Recovery: Listen for first interaction to resume if blocked
+  // Audio Autoplay Recovery: ONLY runs if audio is blocked by browser
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !audioBlocked) return;
 
     const resumeAudio = () => {
-      if (audioRef.current && !isPlaying) {
+      if (audioRef.current) {
         audioRef.current.play()
           .then(() => {
             setIsPlaying(true);
-            window.removeEventListener('click', resumeAudio);
-            window.removeEventListener('touchstart', resumeAudio);
+            setAudioBlocked(false); // Successfully recovered!
           })
           .catch(e => console.log("Still blocked", e));
       }
@@ -92,17 +92,26 @@ function App() {
       window.removeEventListener('click', resumeAudio);
       window.removeEventListener('touchstart', resumeAudio);
     };
-  }, [isLoaded, isPlaying]);
+  }, [isLoaded, audioBlocked]);
 
-  const toggleAudio = () => {
+  const toggleAudio = (e) => {
+    if (e) e.stopPropagation(); // Prevent bubbling to the recovery listener
+    
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
         setIsPlaying(false);
+        setAudioBlocked(false); // Stop trying to recover if user explicitly pauses
       } else {
         audioRef.current.play()
-          .then(() => setIsPlaying(true))
-          .catch(e => console.log("Audio play blocked", e));
+          .then(() => {
+            setIsPlaying(true);
+            setAudioBlocked(false);
+          })
+          .catch(e => {
+            console.log("Audio play blocked", e);
+            setAudioBlocked(true);
+          });
       }
     }
   };
@@ -111,10 +120,14 @@ function App() {
     setIsLoaded(true);
     if (audioRef.current) {
       audioRef.current.play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true);
+          setAudioBlocked(false);
+        })
         .catch(e => {
           console.log("Autoplay blocked, waiting for gesture", e);
           setIsPlaying(false);
+          setAudioBlocked(true); // Mark as blocked to enable recovery listener
         });
     }
   };
@@ -123,7 +136,7 @@ function App() {
 
   return (
     <div className="bg-black text-brand-white min-h-screen w-full font-sans overflow-x-hidden">
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {!isLoaded && (
           <Preloader 
             isReady={isReady} 
@@ -142,7 +155,7 @@ function App() {
         {isPlaying ? (
           <Volume2 className="w-6 h-6 text-brand-white group-hover:scale-110 transition-transform" />
         ) : (
-          <VolumeX className="w-6 h-6 text-brand-white group-hover:scale-110 transition-transform animate-pulse" />
+          <VolumeX className={`w-6 h-6 text-brand-white group-hover:scale-110 transition-transform ${audioBlocked ? 'animate-pulse' : ''}`} />
         )}
       </button>
 
