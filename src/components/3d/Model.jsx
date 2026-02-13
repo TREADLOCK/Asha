@@ -259,26 +259,29 @@ export default function Model({ isEntering, onLoaded }) {
 
         // --- 3. ROTATION LOGIC ---
         // Lock rotation tighter as we reach the final symbol (0.8+)
-        const lockIn = THREE.MathUtils.smoothstep(dProg, 0.8, 0.95);
+        // Gradual lock-in to allow for a longer, more majestic spin
+        const lockIn = THREE.MathUtils.smoothstep(dProg, 0.82, 0.98);
         const freedom = 1.0 - lockIn;
 
         const baseRotY = dProg * Math.PI * 6; // Faster base rotation
-        const extraRotation = THREE.MathUtils.smoothstep(dProg, 0.85, 1.0) * Math.PI * 2;
+        // Intensified extra rotation for "Rose-like" majestic spin (~2.5 full turns)
+        const extraRotation = THREE.MathUtils.smoothstep(dProg, 0.82, 1.0) * Math.PI * 5;
         const targetRotY = baseRotY + extraRotation; 
 
         mesh.current.rotation.y = targetRotY;
         mesh.current.rotation.x = (dProg * 0.3) * freedom;
         mesh.current.rotation.z = (dProg * 0.05) * freedom;
 
-        // Absolute Lock
-        if (dProg > 0.97) {
+        // Absolute Lock (Extreme end)
+        if (dProg > 0.985) {
             mesh.current.rotation.x = THREE.MathUtils.lerp(mesh.current.rotation.x, 0, 0.1);
             mesh.current.rotation.z = THREE.MathUtils.lerp(mesh.current.rotation.z, 0, 0.1);
         }
 
         // --- 3. CAMERA CINEMATIC ZOOM (Synced) ---
-        // DELAYED ZOOM: Start at 0.95 instead of 0.9
-        const zoomPhase = THREE.MathUtils.smoothstep(dProg, 0.95, 1.0);
+        // EXTREME DELAYED ZOOM: Start at 0.98 instead of 0.95
+        // This gives the "Rose-like" feel of spinning before the pull-in
+        const zoomPhase = THREE.MathUtils.smoothstep(dProg, 0.98, 1.0);
         // Adjusted target positions to account for scaling
         const targetZ = THREE.MathUtils.lerp(5, -2.5 * responsiveScale, zoomPhase);
         const targetY = THREE.MathUtils.lerp(0, 0.8 * responsiveScale, zoomPhase);

@@ -41,12 +41,12 @@ export default function Climax() {
     // LOCK SCROLL
     window.dispatchEvent(new CustomEvent('lock-scroll'));
 
-    // Ultra-Snappy Sequence timing: 1.2s - 1.5s
+    // Ultra-Snappy Sequence timing: Adjusted for 1.5s initial spin focus
     const timers = [
-      setTimeout(() => setStage(STAGES.TREADLOCK), 1200),
-      setTimeout(() => setStage(STAGES.ROMANTIC), 2500),
-      setTimeout(() => setStage(STAGES.VOID), 3800), // Everything fades FASTER
-      setTimeout(() => setStage(STAGES.END), 4100), // Trigger loop reset FASTER
+      setTimeout(() => setStage(STAGES.TREADLOCK), 2700), // 1.5s delay + 1.2s focus
+      setTimeout(() => setStage(STAGES.ROMANTIC), 4000), 
+      setTimeout(() => setStage(STAGES.VOID), 5300), 
+      setTimeout(() => setStage(STAGES.END), 5600), 
     ];
 
     return () => timers.forEach(clearTimeout);
@@ -89,7 +89,7 @@ export default function Climax() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4 } }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: 1.5 }} // Added 1.5s delay for spin focus
               className="absolute inset-0 flex flex-col items-center justify-center p-4"
             >
               <h1 className="text-[clamp(2.5rem,10vw,6rem)] font-serif text-brand-white drop-shadow-2xl brightness-125 mb-4 md:mb-6 leading-tight">
